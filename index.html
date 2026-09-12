@@ -72,6 +72,11 @@ section.view{position:relative;min-height:0;background:var(--scene-bg)}
 canvas{display:block;width:100%;height:100%}
 .hud{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap}
 .hud button{font-size:11px;padding:4px 9px;background:color-mix(in srgb,var(--panel) 85%,transparent)}
+.hud .tools{display:inline-flex;margin-right:8px;border-radius:4px;overflow:hidden;border:1px solid var(--line-strong)}
+.hud .tools button{border:0;border-radius:0;border-right:1px solid var(--line)}
+.hud .tools button:last-child{border-right:0}
+.hud .tools button.on{background:var(--accent);color:var(--accent-ink)}
+section.view canvas{touch-action:none}
 .info{position:absolute;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 12px;min-width:200px;font-family:var(--mono);font-size:12px;line-height:1.6}
 .info b{font-family:var(--sans);font-weight:600;display:block;margin-bottom:2px}
 .info .k{color:var(--muted)}
@@ -123,16 +128,22 @@ canvas{display:block;width:100%;height:100%}
   <section class="view">
     <canvas id="c"></canvas>
     <div class="hud">
+      <span class="tools">
+        <button data-tool="select" title="선택 (Space)">선택</button>
+        <button data-tool="orbit" title="궤도 (O)">궤도</button>
+        <button data-tool="pan" title="이동 (H)">이동</button>
+        <button data-tool="zoom" title="확대/축소 (Z)">확대</button>
+      </span>
       <button data-view="iso">등각</button>
       <button data-view="front">정면</button>
       <button data-view="side">측면</button>
       <button data-view="top">평면</button>
-      <button id="btnFit">맞춤</button>
+      <button id="btnFit" title="범위 맞춤 (Shift+Z)">맞춤</button>
     </div>
     <div class="legend">
       <span><i class="sw" style="background:var(--board)"></i>원본</span>
       <span><i class="sw" style="background:var(--board-mirror)"></i>반전(거울상)</span>
-      <span>드래그 회전 · 휠 확대 · 우클릭 이동 · 부품 클릭 시 정보</span>
+      <span>휠버튼 드래그 궤도 · Shift+휠버튼 이동 · 휠 확대 · 클릭 선택 · 단축키 Space/O/H/Z, Shift+Z 맞춤</span>
     </div>
     <div class="info" id="info" hidden></div>
   </section>
@@ -226,7 +237,7 @@ const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(40, 1, 1, 100000);
+const camera = new THREE.PerspectiveCamera(35, 1, 1, 100000);
 camera.up.set(0,0,1);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f98, 0.9));
 const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-600, -900, 1400); scene.add(sun);
@@ -294,49 +305,112 @@ function select(i){
     <span class="k">구멍</span> ${hs.length ? hs.map(h=>`⌀${h.d} @ ${p.mir?p.w-h.x:h.x},${h.y}`).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') : '없음'}`;
 }
 
-// ---------- 카메라 조작 ----------
+// ---------- 카메라 조작 (SketchUp 방식) ----------
+// 휠 = 커서 쪽으로 확대/축소 · 휠버튼 드래그 = 궤도(커서 아래 점 기준) · Shift+휠버튼 = 이동
+// 도구: Space 선택 · O 궤도 · H 이동 · Z 확대 · Shift+Z 범위 맞춤 · Esc 선택으로
 const target = new THREE.Vector3(300,200,360);
-let dist = 2200, theta = -0.75, phi = 1.05; // spherical (Z-up)
-function updateCam(){
-  camera.position.set(target.x + dist*Math.sin(phi)*Math.cos(theta), target.y + dist*Math.sin(phi)*Math.sin(theta), target.z + dist*Math.cos(phi));
-  camera.lookAt(target);
-}
+camera.position.set(2000,-2400,1800);
+function updateCam(){ camera.lookAt(target); }
+const view = document.querySelector('section.view');
+let tool = 'select';
+const CURSOR = {select:'default', orbit:'grab', pan:'move', zoom:'zoom-in'};
+function setTool(t){ tool = t; view.style.cursor = CURSOR[t]; document.querySelectorAll('.hud [data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t)); }
+document.querySelectorAll('.hud [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+
 function bounds(){
   const b = new THREE.Box3(); pickables.forEach(m=>b.expandByObject(m));
   if(b.isEmpty()) b.set(new THREE.Vector3(-300,-300,0), new THREE.Vector3(300,300,300)); return b;
 }
-function fit(){
+function fit(){ // 범위 맞춤: 보는 방향은 유지
+  const dir = camera.position.clone().sub(target).normalize();
   const b = bounds(); b.getCenter(target);
   const size = b.getSize(new THREE.Vector3()).length();
-  dist = size / (2*Math.tan(camera.fov*Math.PI/360)) * 1.15; updateCam();
+  const dist = size / (2*Math.tan(camera.fov*Math.PI/360)) * 1.1;
+  camera.position.copy(target).addScaledVector(dir, dist); updateCam();
 }
-const VIEWS = { iso:[-0.75,1.05], front:[-Math.PI/2,Math.PI/2], side:[0,Math.PI/2], top:[-Math.PI/2,0.0001] };
-document.querySelectorAll('.hud [data-view]').forEach(b=>b.onclick=()=>{ [theta,phi]=VIEWS[b.dataset.view]; fit(); });
+const VIEWS = { iso:[1,-1,0.8], front:[0,-1,0], side:[1,0,0], top:[0,-0.0001,1] };
+document.querySelectorAll('.hud [data-view]').forEach(b=>b.onclick=()=>{
+  const d = camera.position.distanceTo(target);
+  camera.position.copy(target).addScaledVector(new THREE.Vector3(...VIEWS[b.dataset.view]).normalize(), d); fit();
+});
 document.getElementById('btnFit').onclick = fit;
+
+const ray = new THREE.Raycaster();
+function ndc(e){ const r = canvas.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1); }
+function pointUnder(e){ // 커서 아래의 3D 점: 부품이 있으면 그 표면, 없으면 바닥 평면
+  ray.setFromCamera(ndc(e), camera);
+  const hit = ray.intersectObjects(pickables)[0]; if(hit) return hit.point;
+  const p = new THREE.Vector3(); if(ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,0,1), 0), p)) return p;
+  return target.clone();
+}
+function orbit(dx, dy, pivot){
+  const yaw = -dx*0.005, pitch = -dy*0.005;
+  const rot = (axis, ang)=>{ camera.position.sub(pivot).applyAxisAngle(axis, ang).add(pivot); target.sub(pivot).applyAxisAngle(axis, ang).add(pivot); };
+  rot(new THREE.Vector3(0,0,1), yaw);
+  const dir = target.clone().sub(camera.position).normalize();
+  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,0,1)).normalize();
+  const elev = Math.asin(THREE.MathUtils.clamp(dir.z,-1,1));
+  const next = elev + pitch; // 위아래로 넘어가지 않게
+  if(next > -1.55 && next < 1.55) rot(right, pitch);
+  updateCam();
+}
+function pan(dx, dy){
+  const d = camera.position.distanceTo(target), s = d*2*Math.tan(camera.fov*Math.PI/360)/canvas.clientHeight;
+  const dir = camera.getWorldDirection(new THREE.Vector3());
+  const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize();
+  const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+  const v = right.multiplyScalar(-dx*s).addScaledVector(up, dy*s);
+  camera.position.add(v); target.add(v); updateCam();
+}
+function zoomAt(e, factor){ // factor<1 확대: 커서 아래 점을 향해 접근
+  const p = pointUnder(e);
+  const v = p.clone().sub(camera.position).multiplyScalar(1-factor);
+  const d = camera.position.distanceTo(p);
+  if(factor<1 && d*factor < 30) return;
+  camera.position.add(v); target.add(v); updateCam();
+}
 
 let drag = null;
 canvas.addEventListener('contextmenu', e=>e.preventDefault());
-canvas.addEventListener('pointerdown', e=>{ drag={x:e.clientX,y:e.clientY,b:e.button,moved:false}; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('mousedown', e=>{ if(e.button===1) e.preventDefault(); }); // 휠버튼 자동 스크롤 방지
+canvas.addEventListener('pointerdown', e=>{
+  let mode = null;
+  if(e.button===1) mode = e.shiftKey ? 'pan' : 'orbit';
+  else if(e.button===0){ mode = tool==='select' ? 'pick' : (tool==='orbit' && e.shiftKey ? 'pan' : tool); }
+  else if(e.button===2) mode = 'pan';
+  if(!mode) return;
+  drag = {x:e.clientX,y:e.clientY,mode,moved:false,pivot: mode==='orbit' ? pointUnder(e) : null};
+  if(mode==='orbit') view.style.cursor='grabbing';
+  canvas.setPointerCapture(e.pointerId); e.preventDefault();
+});
 canvas.addEventListener('pointermove', e=>{
   if(!drag) return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag.x=e.clientX; drag.y=e.clientY;
   if(Math.abs(dx)+Math.abs(dy)>2) drag.moved=true;
-  if(drag.b===0){ theta -= dx*0.006; phi = Math.min(Math.PI-0.02, Math.max(0.02, phi - dy*0.006)); }
-  else { const s = dist*0.0012; const right = new THREE.Vector3().crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
-         const up = new THREE.Vector3().crossVectors(right, camera.getWorldDirection(new THREE.Vector3())).normalize();
-         target.addScaledVector(right,-dx*s).addScaledVector(up,-dy*s); }
-  updateCam();
+  if(drag.mode==='orbit') orbit(dx, dy, drag.pivot);
+  else if(drag.mode==='pan') pan(dx, dy);
+  else if(drag.mode==='zoom') zoomAt({clientX:canvas.getBoundingClientRect().left+canvas.clientWidth/2, clientY:canvas.getBoundingClientRect().top+canvas.clientHeight/2}, Math.exp(dy*0.01));
 });
 canvas.addEventListener('pointerup', e=>{
-  if(drag && !drag.moved && drag.b===0){ // pick
-    const r = canvas.getBoundingClientRect();
-    const m = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
-    const ray = new THREE.Raycaster(); ray.setFromCamera(m, camera);
+  if(drag && drag.mode==='pick' && !drag.moved){
+    ray.setFromCamera(ndc(e), camera);
     const hit = ray.intersectObjects(pickables)[0];
     if(hit) select(hit.object.userData.i); else if(selected>=0) select(selected);
   }
-  drag = null;
+  drag = null; setTool(tool);
 });
-canvas.addEventListener('wheel', e=>{ e.preventDefault(); dist *= Math.exp(e.deltaY*0.0012); dist = Math.max(50, Math.min(50000, dist)); updateCam(); }, {passive:false});
+canvas.addEventListener('wheel', e=>{ e.preventDefault(); zoomAt(e, Math.exp(e.deltaY*0.0015)); }, {passive:false});
+canvas.addEventListener('dblclick', e=>{ if(e.button===0 && tool!=='select'){ const p=pointUnder(e); const v=p.sub(target); camera.position.add(v); target.add(v); updateCam(); } });
+window.addEventListener('keydown', e=>{
+  if(e.target.matches('input,select,textarea')) return;
+  const k = e.key.toLowerCase();
+  if(k===' '){ setTool('select'); e.preventDefault(); }
+  else if(k==='o') setTool('orbit');
+  else if(k==='h') setTool('pan');
+  else if(k==='z' && e.shiftKey) fit();
+  else if(k==='z') setTool('zoom');
+  else if(k==='escape') setTool('select');
+});
+setTool('select');
 
 function resize(){
   const r = canvas.parentElement.getBoundingClientRect();
