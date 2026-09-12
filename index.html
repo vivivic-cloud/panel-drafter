@@ -36,10 +36,10 @@ button:hover{background:var(--row-hover)}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
 button.primary:hover{filter:brightness(1.08)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-main{flex:1;display:grid;grid-template-columns:minmax(520px,46%) 1fr;min-height:0}
+main{flex:1;display:grid;grid-template-columns:360px 1fr;min-height:0}
 aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
 .sheet{flex:1;overflow:auto;min-height:0}
-table{border-collapse:collapse;width:100%;min-width:720px;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 th{position:sticky;top:0;background:var(--panel);z-index:1;text-align:left;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.04em;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
 th small{display:block;font-weight:400;letter-spacing:0;font-size:10px}
 td{padding:2px 3px;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -56,18 +56,9 @@ td.chk input{width:15px;height:15px;accent-color:var(--accent)}
 td.act{white-space:nowrap;text-align:right}
 td.act button{padding:3px 6px;border-color:transparent;color:var(--muted)}
 td.act button:hover{color:var(--ink);border-color:var(--line)}
-.w-name{width:110px}.w-num{width:58px}.w-ori{width:88px}.w-hole{min-width:170px}.w-mir{width:44px}
+.w-name{width:auto}.w-num{width:70px}.w-ori{width:88px}.w-hole{min-width:170px}.w-mir{width:44px}
 .toolbar{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line);align-items:center}
 .toolbar .hint{color:var(--muted);font-size:11px;margin-left:auto}
-.bom{border-top:1px solid var(--line);padding:10px 12px;max-height:34%;overflow:auto}
-.bom h2{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em;margin:0 0 6px}
-.bom table{min-width:0}
-.bom td,.bom th{padding:4px 6px;font-family:var(--mono);font-size:12px}
-.bom td.n{font-family:var(--sans)}
-.bom td.r{text-align:right}
-.pill{display:inline-block;padding:0 6px;border-radius:10px;font-size:11px;line-height:17px;border:1px solid var(--line-strong);font-family:var(--sans)}
-.pill.m{background:var(--board-mirror);color:#1B1F26;border-color:transparent}
-.pill.o{background:var(--board);color:#1B1F26;border-color:transparent}
 section.view{position:relative;min-height:0;background:var(--scene-bg)}
 canvas{display:block;width:100%;height:100%}
 .hud{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap}
@@ -90,9 +81,8 @@ section.view canvas{touch-action:none}
 
 <header>
   <h1>판재 도면기</h1>
-  <span class="sub">표를 채우면 오른쪽에 3D 도면이 바로 그려집니다 · 단위 mm</span>
+  <span class="sub">치수를 넣으면 오른쪽에 바로 그려집니다 · 단위 mm</span>
   <span class="spacer"></span>
-  <button id="btnSample">샘플 불러오기</button>
   <button id="btnClear">모두 지우기</button>
 </header>
 
@@ -102,26 +92,17 @@ section.view canvas{touch-action:none}
       <table id="sheet">
         <thead><tr>
           <th class="w-name">부품명</th>
-          <th class="w-num">가로<small>W</small></th>
-          <th class="w-num">세로<small>H</small></th>
-          <th class="w-num">두께<small>T</small></th>
-          <th class="w-ori">놓임</th>
-          <th class="w-num">X</th><th class="w-num">Y</th><th class="w-num">Z</th>
-          <th class="w-mir">반전</th>
-          <th class="w-hole">구멍 <small>x,y,지름 ; …</small></th>
+          <th class="w-num">가로<small>mm</small></th>
+          <th class="w-num">세로<small>mm</small></th>
+          <th class="w-num">두께<small>mm</small></th>
           <th></th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
     <div class="toolbar">
-      <button class="primary" id="btnAdd">+ 행 추가</button>
-      <span class="hint">구멍 x,y는 판 왼쪽 아래 기준 · 반전 시 좌우가 자동으로 뒤집힙니다</span>
-    </div>
-    <div class="bom">
-      <h2>부품 집계</h2>
-      <table><thead><tr><th>부품명</th><th>W × H × T</th><th style="text-align:right">원본</th><th style="text-align:right">반전</th><th style="text-align:right">합계</th><th style="text-align:right">구멍</th></tr></thead>
-      <tbody id="bom"></tbody></table>
+      <button class="primary" id="btnAdd">+ 판 추가</button>
+      <span class="hint">판은 바닥에 눕혀서 나란히 놓입니다</span>
     </div>
   </aside>
 
@@ -141,8 +122,6 @@ section.view canvas{touch-action:none}
       <button id="btnFit" title="범위 맞춤 (Shift+Z)">맞춤</button>
     </div>
     <div class="legend">
-      <span><i class="sw" style="background:var(--board)"></i>원본</span>
-      <span><i class="sw" style="background:var(--board-mirror)"></i>반전(거울상)</span>
       <span>휠버튼 드래그 궤도 · Shift+휠버튼 이동 · 휠 확대 · 클릭 선택 · 단축키 Space/O/H/Z, Shift+Z 맞춤</span>
     </div>
     <div class="info" id="info" hidden></div>
@@ -152,31 +131,12 @@ section.view canvas{touch-action:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ---------- 데이터 ----------
-const ORI = {
-  flat: '수평(바닥)',   // W→X, H→Y, T→Z
-  front:'정면(세움)',   // W→X, T→Y, H→Z
-  side: '측면(세움)',   // T→X, W→Y, H→Z
-};
-const SAMPLE = [
-  {name:'측판',  w:400,h:720,t:18,ori:'side', x:0,  y:0,  z:0,  mir:false,holes:'22,100,35; 22,620,35; 50,300,5; 350,300,5; 50,400,5; 350,400,5'},
-  {name:'측판',  w:400,h:720,t:18,ori:'side', x:582,y:0,  z:0,  mir:true, holes:'22,100,35; 22,620,35; 50,300,5; 350,300,5; 50,400,5; 350,400,5'},
-  {name:'상판',  w:564,h:400,t:18,ori:'flat', x:18, y:0,  z:702,mir:false,holes:''},
-  {name:'하판',  w:564,h:400,t:18,ori:'flat', x:18, y:0,  z:0,  mir:false,holes:''},
-  {name:'선반',  w:564,h:380,t:18,ori:'flat', x:18, y:0,  z:300,mir:false,holes:''},
-  {name:'뒤판',  w:564,h:684,t:6, ori:'front',x:18, y:394,z:18, mir:false,holes:''},
-  {name:'도어',  w:297,h:716,t:18,ori:'front',x:2,  y:-20,z:2,  mir:false,holes:'21,100,35; 21,616,35'},
-  {name:'도어',  w:297,h:716,t:18,ori:'front',x:301,y:-20,z:2,  mir:true, holes:'21,100,35; 21,616,35'},
-];
+const DEFAULT = [{name:'상판', w:600, h:400, t:18}];
 let parts = [];
-try{ const s = localStorage.getItem('panel-drafter'); if(s) parts = JSON.parse(s); }catch(e){}
-if(!parts.length) parts = SAMPLE.map(p=>({...p}));
-
-function save(){ try{ localStorage.setItem('panel-drafter', JSON.stringify(parts)); }catch(e){} }
-function parseHoles(s){
-  return (s||'').split(';').map(h=>h.trim()).filter(Boolean).map(h=>{
-    const [x,y,d] = h.split(',').map(Number); return (isFinite(x)&&isFinite(y)&&isFinite(d)&&d>0)?{x,y,d}:null;
-  }).filter(Boolean);
-}
+try{ const s = localStorage.getItem('panel-drafter-v2'); if(s) parts = JSON.parse(s); }catch(e){}
+if(!parts.length) parts = DEFAULT.map(p=>({...p}));
+function save(){ try{ localStorage.setItem('panel-drafter-v2', JSON.stringify(parts)); }catch(e){} }
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
 // ---------- 표 ----------
 const tbody = document.getElementById('rows');
@@ -187,50 +147,29 @@ function renderRows(){
     const tr = document.createElement('tr'); tr.dataset.i = i; if(i===selected) tr.classList.add('sel');
     tr.innerHTML = `
       <td><input class="name" data-k="name" value="${esc(p.name)}" placeholder="부품명"></td>
-      <td class="num"><input data-k="w" type="number" value="${p.w}"></td>
-      <td class="num"><input data-k="h" type="number" value="${p.h}"></td>
-      <td class="num"><input data-k="t" type="number" value="${p.t}"></td>
-      <td><select data-k="ori">${Object.entries(ORI).map(([k,v])=>`<option value="${k}"${p.ori===k?' selected':''}>${v}</option>`).join('')}</select></td>
-      <td class="num"><input data-k="x" type="number" value="${p.x}"></td>
-      <td class="num"><input data-k="y" type="number" value="${p.y}"></td>
-      <td class="num"><input data-k="z" type="number" value="${p.z}"></td>
-      <td class="chk"><input data-k="mir" type="checkbox"${p.mir?' checked':''} title="거울상으로 배치"></td>
-      <td><input data-k="holes" value="${esc(p.holes)}" placeholder="예: 22,100,35; 50,300,5"></td>
-      <td class="act"><button data-act="dup" title="복제">복제</button><button data-act="del" title="삭제">✕</button></td>`;
+      <td class="num"><input data-k="w" type="number" min="1" value="${p.w}"></td>
+      <td class="num"><input data-k="h" type="number" min="1" value="${p.h}"></td>
+      <td class="num"><input data-k="t" type="number" min="1" value="${p.t}"></td>
+      <td class="act"><button data-act="del" title="삭제">✕</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 tbody.addEventListener('input', e=>{
   const tr = e.target.closest('tr'); const p = parts[+tr.dataset.i]; const k = e.target.dataset.k; if(!p||!k) return;
-  if(e.target.type==='checkbox') p[k] = e.target.checked;
-  else if(e.target.type==='number') p[k] = Number(e.target.value)||0;
-  else p[k] = e.target.value;
+  p[k] = e.target.type==='number' ? (Number(e.target.value)||0) : e.target.value;
   save(); build();
 });
 tbody.addEventListener('click', e=>{
   const tr = e.target.closest('tr'); if(!tr) return; const i = +tr.dataset.i;
-  const act = e.target.dataset.act;
-  if(act==='del'){ parts.splice(i,1); selected=-1; save(); renderRows(); build(); return; }
-  if(act==='dup'){ parts.splice(i+1,0,{...parts[i]}); save(); renderRows(); build(); return; }
+  if(e.target.dataset.act==='del'){ parts.splice(i,1); selected=-1; save(); renderRows(); build(); return; }
   select(i);
 });
-document.getElementById('btnAdd').onclick = ()=>{ parts.push({name:'새 부품',w:300,h:300,t:18,ori:'flat',x:0,y:0,z:0,mir:false,holes:''}); save(); renderRows(); build(); tbody.lastElementChild.querySelector('input').focus(); };
-document.getElementById('btnSample').onclick = ()=>{ parts = SAMPLE.map(p=>({...p})); selected=-1; save(); renderRows(); build(); fit(); };
+document.getElementById('btnAdd').onclick = ()=>{
+  const last = parts[parts.length-1] || DEFAULT[0];
+  parts.push({name:'판 '+(parts.length+1), w:last.w, h:last.h, t:last.t}); save(); renderRows(); build(); fit();
+  tbody.lastElementChild.querySelector('input').select();
+};
 document.getElementById('btnClear').onclick = ()=>{ if(parts.length && !confirm('표를 모두 지울까요?')) return; parts=[]; selected=-1; save(); renderRows(); build(); };
-
-// ---------- 집계 ----------
-function renderBom(){
-  const m = new Map();
-  parts.forEach(p=>{
-    const key = `${p.name}|${p.w}|${p.h}|${p.t}`;
-    const r = m.get(key) || {name:p.name,w:p.w,h:p.h,t:p.t,o:0,mi:0,holes:parseHoles(p.holes).length};
-    p.mir ? r.mi++ : r.o++; m.set(key,r);
-  });
-  const el = document.getElementById('bom');
-  el.innerHTML = [...m.values()].map(r=>`<tr><td class="n">${esc(r.name)}</td><td>${r.w} × ${r.h} × ${r.t}</td><td class="r">${r.o||'·'}</td><td class="r">${r.mi||'·'}</td><td class="r">${r.o+r.mi}</td><td class="r">${r.holes||'·'}</td></tr>`).join('')
-    || '<tr><td class="n" colspan="6" style="color:var(--muted)">행을 추가하면 여기에 집계됩니다</td></tr>';
-}
 
 // ---------- 3D ----------
 const canvas = document.getElementById('c');
@@ -246,7 +185,6 @@ const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).
 let group = new THREE.Group(); scene.add(group);
 let helpers = new THREE.Group(); scene.add(helpers);
 const pickables = [];
-
 function colorOf(k){ return new THREE.Color(css(k)); }
 function buildHelpers(){
   helpers.clear();
@@ -254,38 +192,22 @@ function buildHelpers(){
   const mk = (dir,col)=>{ const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), dir.clone().multiplyScalar(1000)]); helpers.add(new THREE.Line(geo, new THREE.LineBasicMaterial({color:col}))); };
   mk(new THREE.Vector3(1,0,0),0xd0433a); mk(new THREE.Vector3(0,1,0),0x3a9a4a); mk(new THREE.Vector3(0,0,1),0x2f5fc4);
 }
-
-function dims(p){ // box size in world axes
-  if(p.ori==='flat')  return [p.w,p.h,p.t];
-  if(p.ori==='front') return [p.w,p.t,p.h];
-  return [p.t,p.w,p.h];
-}
+const GAP = 100;
 function build(){
   scene.background = colorOf('--scene-bg');
   group.clear(); pickables.length = 0;
-  const board = colorOf('--board'), mboard = colorOf('--board-mirror'), holeC = colorOf('--hole');
+  const board = colorOf('--board');
   const edgeC = new THREE.Color(css('--ink')).lerp(colorOf('--scene-bg'), 0.45);
+  let x = 0;
   parts.forEach((p,i)=>{
-    const [sx,sy,sz] = dims(p); if(!(sx>0&&sy>0&&sz>0)) return;
-    const mat = new THREE.MeshLambertMaterial({color: p.mir?mboard:board});
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz), mat);
-    mesh.position.set(p.x+sx/2, p.y+sy/2, p.z+sz/2);
+    if(!(p.w>0&&p.h>0&&p.t>0)) return;
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.w,p.h,p.t), new THREE.MeshLambertMaterial({color:board}));
+    mesh.position.set(x+p.w/2, p.h/2, p.t/2);   // 바닥에 눕혀서 왼쪽부터 나란히
     mesh.userData.i = i; group.add(mesh); pickables.push(mesh);
     mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({color:edgeC})));
-    // holes: local (u,v) on the face normal to T; mirrored → u' = W-u
-    parseHoles(p.holes).forEach(h=>{
-      const u = p.mir ? p.w - h.x : h.x, v = h.y;
-      const depth = Math.min(12, p.t) + 0.6;
-      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(h.d/2,h.d/2,depth,24), new THREE.MeshLambertMaterial({color:holeC}));
-      // place at the visible face: flat→top(+z), front→front(-y), side→inner face (+x for original, -x for mirrored)
-      let pos, rot;
-      if(p.ori==='flat'){ pos=[p.x+u, p.y+v, p.z+p.t-depth/2+0.6]; rot=[Math.PI/2,0,0]; }
-      else if(p.ori==='front'){ pos=[p.x+u, p.y+depth/2-0.6, p.z+v]; rot=[0,0,0]; }
-      else { const inner = !p.mir; pos=[inner? p.x+p.t-depth/2+0.6 : p.x+depth/2-0.6, p.y+u, p.z+v]; rot=[0,0,Math.PI/2]; }
-      cyl.position.set(...pos); cyl.rotation.set(...rot); group.add(cyl);
-    });
+    x += p.w + GAP;
   });
-  highlight(); renderBom();
+  highlight();
 }
 function highlight(){
   pickables.forEach(m=>{ m.material.emissive = new THREE.Color(m.userData.i===selected ? css('--accent') : '#000000'); m.material.emissiveIntensity = 0.35; });
@@ -296,20 +218,16 @@ function select(i){
   highlight();
   const info = document.getElementById('info');
   if(selected<0){ info.hidden = true; return; }
-  const p = parts[selected], hs = parseHoles(p.holes);
+  const p = parts[selected];
   info.hidden = false;
-  info.innerHTML = `<b>${esc(p.name)} <span class="pill ${p.mir?'m':'o'}">${p.mir?'반전':'원본'}</span></b>
-    <span class="k">크기</span> ${p.w} × ${p.h} × ${p.t}<br>
-    <span class="k">놓임</span> ${ORI[p.ori]}<br>
-    <span class="k">위치</span> ${p.x}, ${p.y}, ${p.z}<br>
-    <span class="k">구멍</span> ${hs.length ? hs.map(h=>`⌀${h.d} @ ${p.mir?p.w-h.x:h.x},${h.y}`).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') : '없음'}`;
+  info.innerHTML = `<b>${esc(p.name)}</b><span class="k">가로</span> ${p.w} <span class="k">세로</span> ${p.h} <span class="k">두께</span> ${p.t}`;
 }
 
 // ---------- 카메라 조작 (SketchUp 방식) ----------
 // 휠 = 커서 쪽으로 확대/축소 · 휠버튼 드래그 = 궤도(커서 아래 점 기준) · Shift+휠버튼 = 이동
 // 도구: Space 선택 · O 궤도 · H 이동 · Z 확대 · Shift+Z 범위 맞춤 · Esc 선택으로
 const target = new THREE.Vector3(300,200,360);
-camera.position.set(2000,-2400,1800);
+camera.position.set(900,-1100,800);
 function updateCam(){ camera.lookAt(target); }
 const view = document.querySelector('section.view');
 let tool = 'select';
