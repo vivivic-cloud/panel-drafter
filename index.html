@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>판재 도면기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F4F6; --panel:#FFFFFF; --line:#DCE0E6; --line-strong:#B9C0CA;
+  --ink:#1B1F26; --muted:#6C7480; --accent:#1F6F8B; --accent-ink:#FFFFFF;
+  --row-hover:#F7F9FB; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --scene-bg:#EEF0F3; --board:#D8C7A3; --board-mirror:#B9CBD9; --hole:#3A3F47; --grid:#C9CED6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181C; --panel:#1D2126; --line:#2C323A; --line-strong:#3E4650;
+    --ink:#E6E9ED; --muted:#8B94A0; --accent:#5FB0CC; --accent-ink:#0F1A1F;
+    --row-hover:#22272D; --scene-bg:#1A1E23; --board:#C4B38F; --board-mirror:#95AABB; --hole:#0E1114; --grid:#353C45;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181C; --panel:#1D2126; --line:#2C323A; --line-strong:#3E4650;
+  --ink:#E6E9ED; --muted:#8B94A0; --accent:#5FB0CC; --accent-ink:#0F1A1F;
+  --row-hover:#22272D; --scene-bg:#1A1E23; --board:#C4B38F; --board-mirror:#95AABB; --hole:#0E1114; --grid:#353C45;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.45;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:15px;font-weight:600;margin:0;letter-spacing:-.01em}
+header .sub{color:var(--muted);font-size:12px}
+header .spacer{flex:1}
+button{font:inherit;font-size:12px;padding:6px 11px;border:1px solid var(--line-strong);border-radius:4px;background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover{background:var(--row-hover)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+button.primary:hover{filter:brightness(1.08)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+main{flex:1;display:grid;grid-template-columns:minmax(520px,46%) 1fr;min-height:0}
+aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
+.sheet{flex:1;overflow:auto;min-height:0}
+table{border-collapse:collapse;width:100%;min-width:720px;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);z-index:1;text-align:left;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.04em;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th small{display:block;font-weight:400;letter-spacing:0;font-size:10px}
+td{padding:2px 3px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:hover td{background:var(--row-hover)}
+tr.sel td{background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
+td input,td select{width:100%;font:inherit;font-family:var(--mono);font-size:12px;padding:5px 6px;border:1px solid transparent;border-radius:3px;background:transparent;color:var(--ink)}
+td input.name{font-family:var(--sans)}
+td input:hover,td select:hover{border-color:var(--line)}
+td input:focus,td select:focus{border-color:var(--accent);background:var(--panel)}
+td.num input{text-align:right;-moz-appearance:textfield;appearance:textfield}
+td.num input::-webkit-outer-spin-button,td.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+td.chk{text-align:center}
+td.chk input{width:15px;height:15px;accent-color:var(--accent)}
+td.act{white-space:nowrap;text-align:right}
+td.act button{padding:3px 6px;border-color:transparent;color:var(--muted)}
+td.act button:hover{color:var(--ink);border-color:var(--line)}
+.w-name{width:110px}.w-num{width:58px}.w-ori{width:88px}.w-hole{min-width:170px}.w-mir{width:44px}
+.toolbar{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line);align-items:center}
+.toolbar .hint{color:var(--muted);font-size:11px;margin-left:auto}
+.bom{border-top:1px solid var(--line);padding:10px 12px;max-height:34%;overflow:auto}
+.bom h2{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.04em;margin:0 0 6px}
+.bom table{min-width:0}
+.bom td,.bom th{padding:4px 6px;font-family:var(--mono);font-size:12px}
+.bom td.n{font-family:var(--sans)}
+.bom td.r{text-align:right}
+.pill{display:inline-block;padding:0 6px;border-radius:10px;font-size:11px;line-height:17px;border:1px solid var(--line-strong);font-family:var(--sans)}
+.pill.m{background:var(--board-mirror);color:#1B1F26;border-color:transparent}
+.pill.o{background:var(--board);color:#1B1F26;border-color:transparent}
+section.view{position:relative;min-height:0;background:var(--scene-bg)}
+canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap}
+.hud button{font-size:11px;padding:4px 9px;background:color-mix(in srgb,var(--panel) 85%,transparent)}
+.info{position:absolute;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 12px;min-width:200px;font-family:var(--mono);font-size:12px;line-height:1.6}
+.info b{font-family:var(--sans);font-weight:600;display:block;margin-bottom:2px}
+.info .k{color:var(--muted)}
+.legend{position:absolute;left:12px;bottom:12px;color:var(--muted);font-size:11px;display:flex;gap:12px;align-items:center}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px;border:1px solid rgba(0,0,0,.15)}
+@media (max-width:900px){main{grid-template-columns:1fr;grid-template-rows:55% 1fr}aside{border-right:0;border-bottom:1px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>판재 도면기</h1>
+  <span class="sub">표를 채우면 오른쪽에 3D 도면이 바로 그려집니다 · 단위 mm</span>
+  <span class="spacer"></span>
+  <button id="btnSample">샘플 불러오기</button>
+  <button id="btnClear">모두 지우기</button>
+</header>
+
+<main>
+  <aside>
+    <div class="sheet">
+      <table id="sheet">
+        <thead><tr>
+          <th class="w-name">부품명</th>
+          <th class="w-num">가로<small>W</small></th>
+          <th class="w-num">세로<small>H</small></th>
+          <th class="w-num">두께<small>T</small></th>
+          <th class="w-ori">놓임</th>
+          <th class="w-num">X</th><th class="w-num">Y</th><th class="w-num">Z</th>
+          <th class="w-mir">반전</th>
+          <th class="w-hole">구멍 <small>x,y,지름 ; …</small></th>
+          <th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="btnAdd">+ 행 추가</button>
+      <span class="hint">구멍 x,y는 판 왼쪽 아래 기준 · 반전 시 좌우가 자동으로 뒤집힙니다</span>
+    </div>
+    <div class="bom">
+      <h2>부품 집계</h2>
+      <table><thead><tr><th>부품명</th><th>W × H × T</th><th style="text-align:right">원본</th><th style="text-align:right">반전</th><th style="text-align:right">합계</th><th style="text-align:right">구멍</th></tr></thead>
+      <tbody id="bom"></tbody></table>
+    </div>
+  </aside>
+
+  <section class="view">
+    <canvas id="c"></canvas>
+    <div class="hud">
+      <button data-view="iso">등각</button>
+      <button data-view="front">정면</button>
+      <button data-view="side">측면</button>
+      <button data-view="top">평면</button>
+      <button id="btnFit">맞춤</button>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--board)"></i>원본</span>
+      <span><i class="sw" style="background:var(--board-mirror)"></i>반전(거울상)</span>
+      <span>드래그 회전 · 휠 확대 · 우클릭 이동 · 부품 클릭 시 정보</span>
+    </div>
+    <div class="info" id="info" hidden></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ---------- 데이터 ----------
+const ORI = {
+  flat: '수평(바닥)',   // W→X, H→Y, T→Z
+  front:'정면(세움)',   // W→X, T→Y, H→Z
+  side: '측면(세움)',   // T→X, W→Y, H→Z
+};
+const SAMPLE = [
+  {name:'측판',  w:400,h:720,t:18,ori:'side', x:0,  y:0,  z:0,  mir:false,holes:'22,100,35; 22,620,35; 50,300,5; 350,300,5; 50,400,5; 350,400,5'},
+  {name:'측판',  w:400,h:720,t:18,ori:'side', x:582,y:0,  z:0,  mir:true, holes:'22,100,35; 22,620,35; 50,300,5; 350,300,5; 50,400,5; 350,400,5'},
+  {name:'상판',  w:564,h:400,t:18,ori:'flat', x:18, y:0,  z:702,mir:false,holes:''},
+  {name:'하판',  w:564,h:400,t:18,ori:'flat', x:18, y:0,  z:0,  mir:false,holes:''},
+  {name:'선반',  w:564,h:380,t:18,ori:'flat', x:18, y:0,  z:300,mir:false,holes:''},
+  {name:'뒤판',  w:564,h:684,t:6, ori:'front',x:18, y:394,z:18, mir:false,holes:''},
+  {name:'도어',  w:297,h:716,t:18,ori:'front',x:2,  y:-20,z:2,  mir:false,holes:'21,100,35; 21,616,35'},
+  {name:'도어',  w:297,h:716,t:18,ori:'front',x:301,y:-20,z:2,  mir:true, holes:'21,100,35; 21,616,35'},
+];
+let parts = [];
+try{ const s = localStorage.getItem('panel-drafter'); if(s) parts = JSON.parse(s); }catch(e){}
+if(!parts.length) parts = SAMPLE.map(p=>({...p}));
+
+function save(){ try{ localStorage.setItem('panel-drafter', JSON.stringify(parts)); }catch(e){} }
+function parseHoles(s){
+  return (s||'').split(';').map(h=>h.trim()).filter(Boolean).map(h=>{
+    const [x,y,d] = h.split(',').map(Number); return (isFinite(x)&&isFinite(y)&&isFinite(d)&&d>0)?{x,y,d}:null;
+  }).filter(Boolean);
+}
+
+// ---------- 표 ----------
+const tbody = document.getElementById('rows');
+let selected = -1;
+function renderRows(){
+  tbody.innerHTML = '';
+  parts.forEach((p,i)=>{
+    const tr = document.createElement('tr'); tr.dataset.i = i; if(i===selected) tr.classList.add('sel');
+    tr.innerHTML = `
+      <td><input class="name" data-k="name" value="${esc(p.name)}" placeholder="부품명"></td>
+      <td class="num"><input data-k="w" type="number" value="${p.w}"></td>
+      <td class="num"><input data-k="h" type="number" value="${p.h}"></td>
+      <td class="num"><input data-k="t" type="number" value="${p.t}"></td>
+      <td><select data-k="ori">${Object.entries(ORI).map(([k,v])=>`<option value="${k}"${p.ori===k?' selected':''}>${v}</option>`).join('')}</select></td>
+      <td class="num"><input data-k="x" type="number" value="${p.x}"></td>
+      <td class="num"><input data-k="y" type="number" value="${p.y}"></td>
+      <td class="num"><input data-k="z" type="number" value="${p.z}"></td>
+      <td class="chk"><input data-k="mir" type="checkbox"${p.mir?' checked':''} title="거울상으로 배치"></td>
+      <td><input data-k="holes" value="${esc(p.holes)}" placeholder="예: 22,100,35; 50,300,5"></td>
+      <td class="act"><button data-act="dup" title="복제">복제</button><button data-act="del" title="삭제">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+tbody.addEventListener('input', e=>{
+  const tr = e.target.closest('tr'); const p = parts[+tr.dataset.i]; const k = e.target.dataset.k; if(!p||!k) return;
+  if(e.target.type==='checkbox') p[k] = e.target.checked;
+  else if(e.target.type==='number') p[k] = Number(e.target.value)||0;
+  else p[k] = e.target.value;
+  save(); build();
+});
+tbody.addEventListener('click', e=>{
+  const tr = e.target.closest('tr'); if(!tr) return; const i = +tr.dataset.i;
+  const act = e.target.dataset.act;
+  if(act==='del'){ parts.splice(i,1); selected=-1; save(); renderRows(); build(); return; }
+  if(act==='dup'){ parts.splice(i+1,0,{...parts[i]}); save(); renderRows(); build(); return; }
+  select(i);
+});
+document.getElementById('btnAdd').onclick = ()=>{ parts.push({name:'새 부품',w:300,h:300,t:18,ori:'flat',x:0,y:0,z:0,mir:false,holes:''}); save(); renderRows(); build(); tbody.lastElementChild.querySelector('input').focus(); };
+document.getElementById('btnSample').onclick = ()=>{ parts = SAMPLE.map(p=>({...p})); selected=-1; save(); renderRows(); build(); fit(); };
+document.getElementById('btnClear').onclick = ()=>{ if(parts.length && !confirm('표를 모두 지울까요?')) return; parts=[]; selected=-1; save(); renderRows(); build(); };
+
+// ---------- 집계 ----------
+function renderBom(){
+  const m = new Map();
+  parts.forEach(p=>{
+    const key = `${p.name}|${p.w}|${p.h}|${p.t}`;
+    const r = m.get(key) || {name:p.name,w:p.w,h:p.h,t:p.t,o:0,mi:0,holes:parseHoles(p.holes).length};
+    p.mir ? r.mi++ : r.o++; m.set(key,r);
+  });
+  const el = document.getElementById('bom');
+  el.innerHTML = [...m.values()].map(r=>`<tr><td class="n">${esc(r.name)}</td><td>${r.w} × ${r.h} × ${r.t}</td><td class="r">${r.o||'·'}</td><td class="r">${r.mi||'·'}</td><td class="r">${r.o+r.mi}</td><td class="r">${r.holes||'·'}</td></tr>`).join('')
+    || '<tr><td class="n" colspan="6" style="color:var(--muted)">행을 추가하면 여기에 집계됩니다</td></tr>';
+}
+
+// ---------- 3D ----------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 1, 100000);
+camera.up.set(0,0,1);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f98, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-600, -900, 1400); scene.add(sun);
+
+const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+let group = new THREE.Group(); scene.add(group);
+let helpers = new THREE.Group(); scene.add(helpers);
+const pickables = [];
+
+function colorOf(k){ return new THREE.Color(css(k)); }
+function buildHelpers(){
+  helpers.clear();
+  const g = new THREE.GridHelper(2000, 40, colorOf('--grid'), colorOf('--grid')); g.rotation.x = Math.PI/2; g.position.z = -0.5; helpers.add(g);
+  const mk = (dir,col)=>{ const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), dir.clone().multiplyScalar(1000)]); helpers.add(new THREE.Line(geo, new THREE.LineBasicMaterial({color:col}))); };
+  mk(new THREE.Vector3(1,0,0),0xd0433a); mk(new THREE.Vector3(0,1,0),0x3a9a4a); mk(new THREE.Vector3(0,0,1),0x2f5fc4);
+}
+
+function dims(p){ // box size in world axes
+  if(p.ori==='flat')  return [p.w,p.h,p.t];
+  if(p.ori==='front') return [p.w,p.t,p.h];
+  return [p.t,p.w,p.h];
+}
+function build(){
+  scene.background = colorOf('--scene-bg');
+  group.clear(); pickables.length = 0;
+  const board = colorOf('--board'), mboard = colorOf('--board-mirror'), holeC = colorOf('--hole');
+  const edgeC = new THREE.Color(css('--ink')).lerp(colorOf('--scene-bg'), 0.45);
+  parts.forEach((p,i)=>{
+    const [sx,sy,sz] = dims(p); if(!(sx>0&&sy>0&&sz>0)) return;
+    const mat = new THREE.MeshLambertMaterial({color: p.mir?mboard:board});
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz), mat);
+    mesh.position.set(p.x+sx/2, p.y+sy/2, p.z+sz/2);
+    mesh.userData.i = i; group.add(mesh); pickables.push(mesh);
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({color:edgeC})));
+    // holes: local (u,v) on the face normal to T; mirrored → u' = W-u
+    parseHoles(p.holes).forEach(h=>{
+      const u = p.mir ? p.w - h.x : h.x, v = h.y;
+      const depth = Math.min(12, p.t) + 0.6;
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(h.d/2,h.d/2,depth,24), new THREE.MeshLambertMaterial({color:holeC}));
+      // place at the visible face: flat→top(+z), front→front(-y), side→inner face (+x for original, -x for mirrored)
+      let pos, rot;
+      if(p.ori==='flat'){ pos=[p.x+u, p.y+v, p.z+p.t-depth/2+0.6]; rot=[Math.PI/2,0,0]; }
+      else if(p.ori==='front'){ pos=[p.x+u, p.y+depth/2-0.6, p.z+v]; rot=[0,0,0]; }
+      else { const inner = !p.mir; pos=[inner? p.x+p.t-depth/2+0.6 : p.x+depth/2-0.6, p.y+u, p.z+v]; rot=[0,0,Math.PI/2]; }
+      cyl.position.set(...pos); cyl.rotation.set(...rot); group.add(cyl);
+    });
+  });
+  highlight(); renderBom();
+}
+function highlight(){
+  pickables.forEach(m=>{ m.material.emissive = new THREE.Color(m.userData.i===selected ? css('--accent') : '#000000'); m.material.emissiveIntensity = 0.35; });
+}
+function select(i){
+  selected = (selected===i) ? -1 : i;
+  [...tbody.children].forEach((tr,k)=>tr.classList.toggle('sel', k===selected));
+  highlight();
+  const info = document.getElementById('info');
+  if(selected<0){ info.hidden = true; return; }
+  const p = parts[selected], hs = parseHoles(p.holes);
+  info.hidden = false;
+  info.innerHTML = `<b>${esc(p.name)} <span class="pill ${p.mir?'m':'o'}">${p.mir?'반전':'원본'}</span></b>
+    <span class="k">크기</span> ${p.w} × ${p.h} × ${p.t}<br>
+    <span class="k">놓임</span> ${ORI[p.ori]}<br>
+    <span class="k">위치</span> ${p.x}, ${p.y}, ${p.z}<br>
+    <span class="k">구멍</span> ${hs.length ? hs.map(h=>`⌀${h.d} @ ${p.mir?p.w-h.x:h.x},${h.y}`).join('<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') : '없음'}`;
+}
+
+// ---------- 카메라 조작 ----------
+const target = new THREE.Vector3(300,200,360);
+let dist = 2200, theta = -0.75, phi = 1.05; // spherical (Z-up)
+function updateCam(){
+  camera.position.set(target.x + dist*Math.sin(phi)*Math.cos(theta), target.y + dist*Math.sin(phi)*Math.sin(theta), target.z + dist*Math.cos(phi));
+  camera.lookAt(target);
+}
+function bounds(){
+  const b = new THREE.Box3(); pickables.forEach(m=>b.expandByObject(m));
+  if(b.isEmpty()) b.set(new THREE.Vector3(-300,-300,0), new THREE.Vector3(300,300,300)); return b;
+}
+function fit(){
+  const b = bounds(); b.getCenter(target);
+  const size = b.getSize(new THREE.Vector3()).length();
+  dist = size / (2*Math.tan(camera.fov*Math.PI/360)) * 1.15; updateCam();
+}
+const VIEWS = { iso:[-0.75,1.05], front:[-Math.PI/2,Math.PI/2], side:[0,Math.PI/2], top:[-Math.PI/2,0.0001] };
+document.querySelectorAll('.hud [data-view]').forEach(b=>b.onclick=()=>{ [theta,phi]=VIEWS[b.dataset.view]; fit(); });
+document.getElementById('btnFit').onclick = fit;
+
+let drag = null;
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+canvas.addEventListener('pointerdown', e=>{ drag={x:e.clientX,y:e.clientY,b:e.button,moved:false}; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e=>{
+  if(!drag) return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; drag.x=e.clientX; drag.y=e.clientY;
+  if(Math.abs(dx)+Math.abs(dy)>2) drag.moved=true;
+  if(drag.b===0){ theta -= dx*0.006; phi = Math.min(Math.PI-0.02, Math.max(0.02, phi - dy*0.006)); }
+  else { const s = dist*0.0012; const right = new THREE.Vector3().crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+         const up = new THREE.Vector3().crossVectors(right, camera.getWorldDirection(new THREE.Vector3())).normalize();
+         target.addScaledVector(right,-dx*s).addScaledVector(up,-dy*s); }
+  updateCam();
+});
+canvas.addEventListener('pointerup', e=>{
+  if(drag && !drag.moved && drag.b===0){ // pick
+    const r = canvas.getBoundingClientRect();
+    const m = new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+    const ray = new THREE.Raycaster(); ray.setFromCamera(m, camera);
+    const hit = ray.intersectObjects(pickables)[0];
+    if(hit) select(hit.object.userData.i); else if(selected>=0) select(selected);
+  }
+  drag = null;
+});
+canvas.addEventListener('wheel', e=>{ e.preventDefault(); dist *= Math.exp(e.deltaY*0.0012); dist = Math.max(50, Math.min(50000, dist)); updateCam(); }, {passive:false});
+
+function resize(){
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false); camera.aspect = r.width/r.height; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas.parentElement);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ buildHelpers(); build(); });
+new MutationObserver(()=>{ buildHelpers(); build(); }).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+renderRows(); buildHelpers(); build(); resize(); fit();
+(function loop(){ renderer.render(scene, camera); requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>
