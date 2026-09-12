@@ -4,128 +4,122 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>판재 도면기</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <style>
-:root{
-  --bg:#F3F4F6; --panel:#FFFFFF; --line:#DCE0E6; --line-strong:#B9C0CA;
-  --ink:#1B1F26; --muted:#6C7480; --accent:#1F6F8B; --accent-ink:#FFFFFF;
-  --row-hover:#F7F9FB; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
-  --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
-  --scene-bg:#EEF0F3; --board:#D8C7A3; --board-mirror:#B9CBD9; --hole:#3A3F47; --grid:#C9CED6;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#15181C; --panel:#1D2126; --line:#2C323A; --line-strong:#3E4650;
-    --ink:#E6E9ED; --muted:#8B94A0; --accent:#5FB0CC; --accent-ink:#0F1A1F;
-    --row-hover:#22272D; --scene-bg:#1A1E23; --board:#C4B38F; --board-mirror:#95AABB; --hole:#0E1114; --grid:#353C45;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#15181C; --panel:#1D2126; --line:#2C323A; --line-strong:#3E4650;
-  --ink:#E6E9ED; --muted:#8B94A0; --accent:#5FB0CC; --accent-ink:#0F1A1F;
-  --row-hover:#22272D; --scene-bg:#1A1E23; --board:#C4B38F; --board-mirror:#95AABB; --hole:#0E1114; --grid:#353C45;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.45;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
-header h1{font-size:15px;font-weight:600;margin:0;letter-spacing:-.01em}
-header .sub{color:var(--muted);font-size:12px}
-header .spacer{flex:1}
-button{font:inherit;font-size:12px;padding:6px 11px;border:1px solid var(--line-strong);border-radius:4px;background:var(--panel);color:var(--ink);cursor:pointer}
-button:hover{background:var(--row-hover)}
-button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
-button.primary:hover{filter:brightness(1.08)}
-button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-main{flex:1;display:grid;grid-template-columns:360px 1fr;min-height:0}
-aside{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:var(--panel)}
-.sheet{flex:1;overflow:auto;min-height:0}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
-th{position:sticky;top:0;background:var(--panel);z-index:1;text-align:left;font-weight:500;font-size:11px;color:var(--muted);letter-spacing:.04em;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
-th small{display:block;font-weight:400;letter-spacing:0;font-size:10px}
-td{padding:2px 3px;border-bottom:1px solid var(--line);vertical-align:middle}
-tr:hover td{background:var(--row-hover)}
-tr.sel td{background:color-mix(in srgb,var(--accent) 12%,var(--panel))}
-td input,td select{width:100%;font:inherit;font-family:var(--mono);font-size:12px;padding:5px 6px;border:1px solid transparent;border-radius:3px;background:transparent;color:var(--ink)}
-td input.name{font-family:var(--sans)}
-td input:hover,td select:hover{border-color:var(--line)}
-td input:focus,td select:focus{border-color:var(--accent);background:var(--panel)}
-td.num input{text-align:right;-moz-appearance:textfield;appearance:textfield}
-td.num input::-webkit-outer-spin-button,td.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-td.chk{text-align:center}
-td.chk input{width:15px;height:15px;accent-color:var(--accent)}
-td.act{white-space:nowrap;text-align:right}
-td.act button{padding:3px 6px;border-color:transparent;color:var(--muted)}
-td.act button:hover{color:var(--ink);border-color:var(--line)}
-.w-name{width:auto}.w-num{width:70px}.w-ori{width:88px}.w-hole{min-width:170px}.w-mir{width:44px}
-.toolbar{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line);align-items:center}
-.toolbar .hint{color:var(--muted);font-size:11px;margin-left:auto}
-section.view{position:relative;min-height:0;background:var(--scene-bg)}
-canvas{display:block;width:100%;height:100%}
-.hud{position:absolute;left:12px;top:12px;display:flex;gap:6px;flex-wrap:wrap}
-.hud button{font-size:11px;padding:4px 9px;background:color-mix(in srgb,var(--panel) 85%,transparent)}
-.hud .tools{display:inline-flex;margin-right:8px;border-radius:4px;overflow:hidden;border:1px solid var(--line-strong)}
-.hud .tools button{border:0;border-radius:0;border-right:1px solid var(--line)}
-.hud .tools button:last-child{border-right:0}
-.hud .tools button.on{background:var(--accent);color:var(--accent-ink)}
-section.view canvas{touch-action:none}
-.info{position:absolute;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 12px;min-width:200px;font-family:var(--mono);font-size:12px;line-height:1.6}
-.info b{font-family:var(--sans);font-weight:600;display:block;margin-bottom:2px}
-.info .k{color:var(--muted)}
-.legend{position:absolute;left:12px;bottom:12px;color:var(--muted);font-size:11px;display:flex;gap:12px;align-items:center}
-.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px;border:1px solid rgba(0,0,0,.15)}
-@media (max-width:900px){main{grid-template-columns:1fr;grid-template-rows:55% 1fr}aside{border-right:0;border-bottom:1px solid var(--line)}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* VIVIVIC 공통 톤 (에이엠티/조혼가구 화면과 동일) */
+:root{ --ink:#37352f; --muted:#787774; --faint:#b0aeaa; --line:#ededeb; --bg:#ffffff; --soft:#f7f6f3; --softer:#f1f1ef; --card:#fbfbfa;
+       --accent:#37352f; --scene-bg:#fbfbfa; --board:#d9c9a6; --grid:#e3e2e0; }
+html{color-scheme:light}
+body{ font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo",Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased; margin:0; }
+.custom-scrollbar::-webkit-scrollbar{width:4px;height:14px}
+.custom-scrollbar::-webkit-scrollbar-track{background:#f1f1ef;border-radius:10px}
+.custom-scrollbar::-webkit-scrollbar-thumb{background:#d3d1cb;border-radius:10px}
+.nav-link{padding:8px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--muted);transition:all .2s;cursor:pointer;white-space:nowrap}
+.nav-link:hover{background:var(--soft);color:var(--ink)}
+.nav-link.active{background:var(--softer);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.notion-card{border:1px solid var(--line);border-radius:10px;background:#fff}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace}
+/* 입력표 */
+.sheet table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.sheet th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.sheet td{padding:3px 3px;border-bottom:1px solid var(--line)}
+.sheet tr:hover td{background:var(--soft)}
+.sheet tr.sel td{background:var(--softer)}
+.sheet input{width:100%;font:inherit;font-size:13px;padding:7px 8px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);outline:none}
+.sheet input:hover{border-color:var(--line)}
+.sheet input:focus{border-color:var(--ink);background:#fff}
+.sheet td.num input{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;-moz-appearance:textfield;appearance:textfield}
+.sheet td.num input::-webkit-outer-spin-button,.sheet td.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.sheet td.act{text-align:right;white-space:nowrap}
+.sheet td.act button{padding:4px 7px;border-radius:6px;color:var(--faint);font-weight:700;font-size:11px;background:transparent;border:0;cursor:pointer}
+.sheet td.act button:hover{background:var(--softer);color:var(--ink)}
+/* 3D 화면 */
+.view{position:relative;background:var(--scene-bg);border-radius:10px;overflow:hidden}
+.view canvas{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.hud .tools,.hud .views{display:inline-flex;gap:2px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:2px}
+.hud .tools button,.hud .views button{font:inherit;font-size:11px;font-weight:700;padding:4px 9px;border:0;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap}
+.hud .tools button:hover,.hud .views button:hover{background:var(--soft);color:var(--ink)}
+.hud .tools button.on{background:var(--ink);color:#fff}
+.hud #btnFit{font:inherit;font-size:11px;font-weight:700;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);cursor:pointer}
+.hud #btnFit:hover{background:var(--soft)}
+.legend{position:absolute;left:10px;bottom:10px;color:var(--faint);font-size:10px;font-weight:600}
+.info{position:absolute;right:10px;bottom:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:180px;font-size:12px;line-height:1.7;box-shadow:0 4px 12px -4px rgba(0,0,0,.08)}
+.info b{display:block;font-weight:800;font-size:13px;margin-bottom:2px}
+.info .k{font-size:10px;font-weight:700;color:var(--muted);margin-right:2px}
+.info .v{font-family:ui-monospace,Menlo,monospace;font-weight:600;margin-right:8px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+@media (max-width:900px){ .layout{grid-template-columns:1fr!important} .view{height:52vh!important} }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>판재 도면기</h1>
-  <span class="sub">치수를 넣으면 오른쪽에 바로 그려집니다 · 단위 mm</span>
-  <span class="spacer"></span>
-  <button id="btnClear">모두 지우기</button>
+<header class="w-full bg-white border-b border-[#ededeb] sticky top-0 z-[100]">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between overflow-x-auto custom-scrollbar">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 mr-4">
+        <div class="font-black text-xl tracking-tighter text-[#37352f]">VIVIVIC</div>
+        <span class="mono" style="font-size:9px;font-weight:700;color:#b0aeaa;background:#f1f0ef;padding:1px 6px;border-radius:4px;letter-spacing:0.04em;">v0.3.0</span>
+      </div>
+      <nav class="flex items-center gap-1">
+        <div class="nav-link active">판재 도면</div>
+      </nav>
+    </div>
+    <div class="flex items-center gap-2 ml-4">
+      <button id="btnClear" class="flex items-center gap-1.5 px-3 py-2 bg-[#f7f6f3] text-[#37352f] border border-[#ededeb] rounded-lg text-[11px] font-bold hover:bg-[#f1f1ef] transition-all active:scale-95 whitespace-nowrap">모두 지우기</button>
+    </div>
+  </div>
 </header>
 
-<main>
-  <aside>
-    <div class="sheet">
-      <table id="sheet">
-        <thead><tr>
-          <th class="w-name">부품명</th>
-          <th class="w-num">가로<small>mm</small></th>
-          <th class="w-num">세로<small>mm</small></th>
-          <th class="w-num">두께<small>mm</small></th>
-          <th></th>
-        </tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
+<main class="max-w-6xl mx-auto px-4 mt-6 pb-10">
+  <div class="layout grid gap-4" style="grid-template-columns:340px 1fr;">
+    <!-- 입력 -->
+    <div class="notion-card bg-[#fbfbfa] p-5 flex flex-col gap-4" style="align-self:start;">
+      <div>
+        <div class="font-black text-[15px] text-[#37352f]">부품 치수</div>
+        <p class="text-[11px] text-[#787774] mt-1">치수를 넣으면 오른쪽에 바로 그려집니다. 단위는 <b>mm</b>.</p>
+      </div>
+      <div class="sheet notion-card overflow-hidden">
+        <table id="sheet">
+          <thead><tr>
+            <th>부품명</th>
+            <th style="width:74px;text-align:right">가로</th>
+            <th style="width:74px;text-align:right">세로</th>
+            <th style="width:64px;text-align:right">두께</th>
+            <th style="width:34px"></th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <button id="btnAdd" class="w-full py-2.5 bg-[#37352f] text-white font-bold text-[13px] rounded-lg hover:bg-black transition-all active:scale-95">+ 판 추가</button>
+      <p class="text-[10px] text-[#b0aeaa] font-semibold">판은 바닥에 눕혀서 왼쪽부터 나란히 놓입니다.</p>
     </div>
-    <div class="toolbar">
-      <button class="primary" id="btnAdd">+ 판 추가</button>
-      <span class="hint">판은 바닥에 눕혀서 나란히 놓입니다</span>
-    </div>
-  </aside>
 
-  <section class="view">
-    <canvas id="c"></canvas>
-    <div class="hud">
-      <span class="tools">
-        <button data-tool="select" title="선택 (Space)">선택</button>
-        <button data-tool="orbit" title="궤도 (O)">궤도</button>
-        <button data-tool="pan" title="이동 (H)">이동</button>
-        <button data-tool="zoom" title="확대/축소 (Z)">확대</button>
-      </span>
-      <button data-view="iso">등각</button>
-      <button data-view="front">정면</button>
-      <button data-view="side">측면</button>
-      <button data-view="top">평면</button>
-      <button id="btnFit" title="범위 맞춤 (Shift+Z)">맞춤</button>
+    <!-- 3D -->
+    <div class="notion-card p-2">
+      <div class="view" style="height:calc(100vh - 140px);min-height:420px;">
+        <canvas id="c"></canvas>
+        <div class="hud">
+          <span class="tools">
+            <button data-tool="select" title="선택 (Space)">선택</button>
+            <button data-tool="orbit" title="궤도 (O)">궤도</button>
+            <button data-tool="pan" title="이동 (H)">이동</button>
+            <button data-tool="zoom" title="확대/축소 (Z)">확대</button>
+          </span>
+          <span class="views">
+            <button data-view="iso">등각</button>
+            <button data-view="front">정면</button>
+            <button data-view="side">측면</button>
+            <button data-view="top">평면</button>
+          </span>
+          <button id="btnFit" title="범위 맞춤 (Shift+Z)">맞춤</button>
+        </div>
+        <div class="legend">휠버튼 드래그 궤도 · Shift+휠버튼 이동 · 휠 확대 · 클릭 선택 · Space / O / H / Z · Shift+Z 맞춤</div>
+        <div class="info" id="info" hidden></div>
+      </div>
     </div>
-    <div class="legend">
-      <span>휠버튼 드래그 궤도 · Shift+휠버튼 이동 · 휠 확대 · 클릭 선택 · 단축키 Space/O/H/Z, Shift+Z 맞춤</span>
-    </div>
-    <div class="info" id="info" hidden></div>
-  </section>
+  </div>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -220,7 +214,7 @@ function select(i){
   if(selected<0){ info.hidden = true; return; }
   const p = parts[selected];
   info.hidden = false;
-  info.innerHTML = `<b>${esc(p.name)}</b><span class="k">가로</span> ${p.w} <span class="k">세로</span> ${p.h} <span class="k">두께</span> ${p.t}`;
+  info.innerHTML = `<b>${esc(p.name)}</b><span class="k">가로</span><span class="v">${p.w}</span><span class="k">세로</span><span class="v">${p.h}</span><span class="k">두께</span><span class="v">${p.t}</span>`;
 }
 
 // ---------- 카메라 조작 (SketchUp 방식) ----------
@@ -229,7 +223,7 @@ function select(i){
 const target = new THREE.Vector3(300,200,360);
 camera.position.set(900,-1100,800);
 function updateCam(){ camera.lookAt(target); }
-const view = document.querySelector('section.view');
+const view = document.querySelector('.view');
 let tool = 'select';
 const CURSOR = {select:'default', orbit:'grab', pan:'move', zoom:'zoom-in'};
 function setTool(t){ tool = t; view.style.cursor = CURSOR[t]; document.querySelectorAll('.hud [data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t)); }
@@ -335,8 +329,6 @@ function resize(){
   renderer.setSize(r.width, r.height, false); camera.aspect = r.width/r.height; camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(canvas.parentElement);
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ buildHelpers(); build(); });
-new MutationObserver(()=>{ buildHelpers(); build(); }).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
 
 renderRows(); buildHelpers(); build(); resize(); fit();
 (function loop(){ renderer.render(scene, camera); requestAnimationFrame(loop); })();
